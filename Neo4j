@@ -1,0 +1,28 @@
+Loading data and creating nodes
+------------------------------------
+
+load csv with headers from 'file:///Destin.csv'
+as data
+MERGE(node1:Patient{name:data.Pat_name, latitude:data.Pat_latitude, longitude:data.Pat_longitude})
+MERGE(node2:Hospital{name:data.H_name})
+MERGE(node3:Ambulance{name:data.Amb_number, latitude:data.Amb_latitude, longitude:data.Amb_longitude})
+MERGE(node1)-[r1:CALLS]->(node3)
+MERGE(node1)-[r3:finds_distance]->(node3)
+MERGE(node1)-[r2:has_distance{Distance:data.Distance}]->(node2)
+RETURN *
+
+Finding the nearest hospital from patient location
+-----------------------------------------------------------
+
+Match(n:Patient {name:'sara'})-[r1:has_distance]->(n2:Hospital)
+where apoc.convert.toInteger(r1.Distance)<6
+RETURN n2.name as HospitalName, apoc.convert.toInteger(r1.Distance) as Distance
+
+
+Finding shortest distance of available Ambulance
+------------------------------------------------------
+
+Match(p:Patient {name:'sara'})-[r3:finds_distance]->(a:Ambulance)
+WITH point({longitude: apoc.convert.toInteger(a.longitude), latitude: apoc.convert.toInteger( a.latitude)}) AS AmbulancePoint, point({longitude: apoc.convert.toInteger(p.longitude), latitude: apoc.convert.toInteger(p.latitude)}) AS PatientPoint
+RETURN round(point.distance(AmbulancePoint, PatientPoint)) AS Distance
+ORDER BY Distance 
